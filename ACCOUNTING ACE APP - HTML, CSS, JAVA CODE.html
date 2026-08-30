@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Accounting Ace · Salone Ledger</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+        :root {
+            --deep-navy: #0B3B5C; --primary-blue: #1F6E8C; --dark-navy: #062233;
+            --gold: #E9B741; --white: #FFFFFF; --off-white: #F2F6FC;
+            --gray: #4A5568; --light-gray: #E2E8F0; --success: #16A34A; --danger: #DC2626;
+            --bg: #F2F6FC; --card-bg: #FFFFFF; --text: #0B3B5C; --shadow: 0 8px 20px rgba(0,0,0,0.04);
+            --radius: 24px; --nav-height: 68px;
+        }
+        body.dark {
+            --bg: #0B1A26; --card-bg: #132C3F; --text: #E8F0F8;
+            --light-gray: #2A4054; --off-white: #1B3348; --shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        body { background: var(--bg); color: var(--text); transition: background 0.2s, color 0.2s; min-height: 100vh; padding-bottom: calc(var(--nav-height) + 20px); font-size: 15px; line-height: 1.5; }
+        .app-container { max-width: 480px; margin: 0 auto; padding: 0 16px 20px; }
+        #splash {
+            position: fixed; inset: 0; background: var(--deep-navy); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 999; transition: opacity 0.5s;
+            color: white; text-align: center; padding: 30px;
+        }
+        #splash.hide { opacity: 0; pointer-events: none; }
+        #splash .logo { font-size: 2.2rem; font-weight: 700; }
+        #splash .logo span { color: var(--gold); }
+        #splash .sub { font-size: 1rem; opacity: 0.8; margin-top: 6px; letter-spacing: 1px; }
+        #splash .tagline { font-size: 0.9rem; opacity: 0.6; margin-top: 18px; max-width: 260px; }
+        .spin { animation: pulse 1.8s infinite; }
+        @keyframes pulse { 0%{ opacity:0.6; transform:scale(0.98); } 50%{ opacity:1; transform:scale(1.02); } 100%{ opacity:0.6; transform:scale(0.98); } }
+        .card { background: var(--card-bg); border-radius: var(--radius); padding: 18px 16px; box-shadow: var(--shadow); margin-bottom: 16px; transition: background 0.2s, box-shadow 0.2s; }
+        .flex { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+        .gap-2 { gap: 8px; } .mt-2 { margin-top: 12px; } .mb-2 { margin-bottom: 12px; }
+        .text-center { text-align: center; } .text-muted { color: var(--gray); font-size: 0.85rem; }
+        .text-gold { color: var(--gold); } .text-success { color: var(--success); } .text-danger { color: var(--danger); }
+        .fw-bold { font-weight: 700; } .fs-small { font-size: 0.8rem; }
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 12px 22px; border: none; border-radius: 60px; font-weight: 600;
+            font-size: 0.95rem; background: var(--primary-blue); color: white;
+            cursor: pointer; transition: 0.15s; min-height: 48px; touch-action: manipulation;
+        }
+        .btn-gold { background: var(--gold); color: var(--dark-navy); }
+        .btn-outline { background: transparent; border: 2px solid var(--primary-blue); color: var(--primary-blue); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-sm { padding: 8px 16px; font-size: 0.8rem; min-height: 36px; }
+        .w-full { width: 100%; }
+        .avatar { width: 48px; height: 48px; border-radius: 48px; object-fit: cover; background: var(--light-gray); }
+        .avatar-lg { width: 72px; height: 72px; }
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: var(--card-bg); border-top: 1px solid var(--light-gray);
+            display: flex; justify-content: space-around; padding: 6px 0 env(safe-area-inset-bottom, 8px);
+            z-index: 100; height: var(--nav-height); transition: background 0.2s;
+        }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center;
+            font-size: 0.65rem; color: var(--gray); background: transparent;
+            border: none; padding: 4px 12px; cursor: pointer; transition: 0.1s; min-width: 56px;
+        }
+        .nav-item i { font-size: 1.3rem; margin-bottom: 2px; }
+        .nav-item.active { color: var(--primary-blue); font-weight: 600; }
+        .nav-item.active i { color: var(--primary-blue); }
+        .onboarding { text-align: center; padding: 30px 10px; }
+        .onboarding .icon { font-size: 4rem; color: var(--gold); margin-bottom: 20px; }
+        .onboarding h2 { font-size: 1.8rem; margin-bottom: 12px; }
+        .dots { display: flex; gap: 10px; justify-content: center; margin: 24px 0; }
+        .dot { width: 10px; height: 10px; border-radius: 10px; background: var(--light-gray); }
+        .dot.active { background: var(--gold); width: 28px; }
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 200; padding: 20px; backdrop-filter: blur(2px);
+            animation: fadeIn 0.2s;
+        }
+        .modal-box {
+            background: var(--card-bg); border-radius: 28px; max-width: 420px;
+            width: 100%; max-height: 90vh; overflow-y: auto; padding: 24px 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        @keyframes fadeIn { from { opacity:0; transform: scale(0.96); } to { opacity:1; transform: scale(1); } }
+        .modal-close { float: right; background: none; border: none; font-size: 1.6rem; color: var(--gray); }
+        input, select, textarea {
+            width: 100%; padding: 14px 16px; border-radius: 16px;
+            border: 1px solid var(--light-gray); background: var(--off-white);
+            font-size: 1rem; transition: 0.1s; color: var(--text);
+        }
+        input:focus, select:focus { border-color: var(--primary-blue); outline: none; }
+        label { font-weight: 500; display: block; margin-bottom: 4px; font-size: 0.9rem; }
+        .form-group { margin-bottom: 16px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .progress-bar { height: 8px; background: var(--light-gray); border-radius: 20px; overflow: hidden; margin: 8px 0; }
+        .progress-fill { height: 100%; background: var(--gold); border-radius: 20px; }
+        .badge { background: var(--gold); color: var(--dark-navy); padding: 4px 12px; border-radius: 40px; font-weight: 600; font-size: 0.7rem; display: inline-block; }
+        .chip { background: var(--off-white); padding: 6px 14px; border-radius: 40px; font-size: 0.75rem; }
+        .transaction-item { border-bottom: 1px solid var(--light-gray); padding: 12px 0; }
+        .transaction-item:last-child { border-bottom: none; }
+        .hidden { display: none !important; }
+        .search-input { background: var(--off-white); border-radius: 60px; padding: 6px 16px; display: flex; align-items: center; border: 1px solid var(--light-gray); }
+        .search-input i { color: var(--gray); margin-right: 8px; }
+        .search-input input { border: none; background: transparent; padding: 12px 0; width: 100%; }
+        .search-input input:focus { outline: none; }
+        .book-card { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--light-gray); }
+        .book-cover { width: 60px; height: 80px; background: var(--deep-navy); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.7rem; text-align: center; padding: 4px; flex-shrink: 0; }
+        .file-input-wrap { position: relative; overflow: hidden; display: inline-block; }
+        .file-input-wrap input[type="file"] { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+        .preview-img { width: 80px; height: 80px; border-radius: 80px; object-fit: cover; border: 3px solid var(--gold); }
+        @media (min-width: 600px) { .app-container { max-width: 560px; padding: 0 24px 20px; } }
+        @media (max-width: 360px) { .btn { font-size: 0.8rem; padding: 10px 16px; } }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: var(--off-white); }
+        ::-webkit-scrollbar-thumb { background: var(--primary-blue); border-radius: 8px; }
+        .toast-ace { position: fixed; bottom: 90px; left: 16px; right: 16px; max-width: 400px; margin: 0 auto; z-index: 999; border-radius: 60px; padding: 14px 20px; font-weight: 500; box-shadow: 0 8px 24px rgba(0,0,0,0.2); transition: opacity 0.3s; }
+        .toast-success { background: var(--success); color: white; }
+        .toast-danger { background: var(--danger); color: white; }
+        .toast-warning { background: var(--gold); color: var(--dark-navy); }
+        .toast-info { background: var(--primary-blue); color: white; }
+    </style>
+</head>
+<body>
+    <div id="splash">
+        <div class="logo spin">ACCOUNTING <span>ACE</span></div>
+        <div class="sub">Salone Ledger</div>
+        <div class="tagline">Learn Accounting. Practice Accounting. Manage Your Money.</div>
+    </div>
+
+    <div id="app" class="app-container hidden">
+        <div id="page-content"></div>
+    </div>
+
+    <nav class="bottom-nav" id="bottomNav">
+        <button class="nav-item active" data-page="dashboard"><i class="fas fa-home"></i>Home</button>
+        <button class="nav-item" data-page="academy"><i class="fas fa-graduation-cap"></i>Academy</button>
+        <button class="nav-item" data-page="quiz"><i class="fas fa-brain"></i>Quiz</button>
+        <button class="nav-item" data-page="calculators"><i class="fas fa-calculator"></i>Calc</button>
+        <button class="nav-item" data-page="settings"><i class="fas fa-user-cog"></i>Settings</button>
+    </nav>
+
+    <div id="modal-container"></div>
+
+    <script>
+        (function(){
+            "use strict";
+
+            let state = {
+                user: null,
+                users: [],
+                transactions: [],
+                quizScores: [],
+                quizProgress: {},
+                learningProgress: {},
+                bookProgress: {},
+                bookmarks: [],
+                achievements: [],
+                settings: { darkMode: false },
+                onboarding: false,
+                currentPage: 'dashboard'
+            };
+
+            const STORE = {
+                get(key) { try { return JSON.parse(localStorage.getItem(key)); } catch { return null; } },
+                set(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+            };
+
+            function loadState() {
+                state.users = STORE.get('aa_users') || [];
+                state.session = STORE.get('aa_session') || null;
+                state.transactions = STORE.get('aa_transactions') || [];
+                state.quizScores = STORE.get('aa_quizScores') || [];
+                state.quizProgress = STORE.get('aa_quizProgress') || {};
+                state.learningProgress = STORE.get('aa_learningProgress') || {};
+                state.bookProgress = STORE.get('aa_bookProgress') || {};
+                state.bookmarks = STORE.get('aa_bookmarks') || [];
+                state.achievements = STORE.get('aa_achievements') || [];
+                state.settings = STORE.get('aa_settings') || { darkMode: false };
+                state.onboarding = STORE.get('aa_onboarding') || false;
+                if (state.session) {
+                    const found = state.users.find(u => u.email === state.session.email);
+                    if (found) state.user = found;
+                }
+                if (state.user) {
+                    state.transactions = state.transactions.filter(t => t.userEmail === state.user.email);
+                } else {
+                    state.transactions = [];
+                }
+                applyTheme();
+            }
+
+            function saveUsers() { STORE.set('aa_users', state.users); }
+            function saveSession() { STORE.set('aa_session', state.session); }
+            function saveTransactions() { STORE.set('aa_transactions', state.transactions); }
+            function saveQuizScores() { STORE.set('aa_quizScores', state.quizScores); }
+            function saveQuizProgress() { STORE.set('aa_quizProgress', state.quizProgress); }
+            function saveLearningProgress() { STORE.set('aa_learningProgress', state.learningProgress); }
+            function saveBookProgress() { STORE.set('aa_bookProgress', state.bookProgress); }
+            function saveBookmarks() { STORE.set('aa_bookmarks', state.bookmarks); }
+            function saveAchievements() { STORE.set('aa_achievements', state.achievements); }
+            function saveSettings() { STORE.set('aa_settings', state.settings); }
+            function saveOnboarding() { STORE.set('aa_onboarding', state.onboarding); }
+
+            function persistAll() {
+                saveUsers(); saveSession(); saveTransactions(); saveQuizScores(); saveQuizProgress();
+                saveLearningProgress(); saveBookProgress(); saveBookmarks(); saveAchievements(); saveSettings(); saveOnboarding();
+            }
+
+            function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+            function getGreeting() {
+                const h = new Date().getHours();
+                if (h >= 5 && h < 12) return 'Good Morning';
+                if (h >= 12 && h < 17) return 'Good Afternoon';
+                if (h >= 17 && h < 24) return 'Good Evening';
+                return 'Good Night';
+            }
+            function firstname(full) { return full ? full.split(' ')[0] : 'Student'; }
+            function formatCurrency(amount) { return 'Le ' + Number(amount).toLocaleString(); }
+
+            function applyTheme() {
+                if (state.settings.darkMode) document.body.classList.add('dark');
+                else document.body.classList.remove('dark');
+            }
+
+            function navigate(page) {
+                state.currentPage = page;
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.page === page));
+                renderPage(page);
+            }
+
+            function renderPage(page) {
+                const el = document.getElementById('page-content');
+                if (!el) return;
+                if (!state.user) {
+                    el.innerHTML = `<div class="card text-center"><p>Please log in or create an account.</p><button class="btn btn-gold" onclick="window._showLogin()">Login / Register</button></div>`;
+                    return;
+                }
+                switch(page) {
+                    case 'dashboard': el.innerHTML = renderDashboard(); break;
+                    case 'academy': el.innerHTML = renderAcademy(); break;
+                    case 'quiz': el.innerHTML = renderQuizCenter(); break;
+                    case 'calculators': el.innerHTML = renderCalculators(); break;
+                    case 'settings': el.innerHTML = renderSettings(); break;
+                    default: el.innerHTML = '<div class="card">Page not found</div>';
+                }
+                attachEvents();
+            }
+
+            function renderDashboard() {
+                const u = state.user;
+                const txs = state.transactions.filter(t => t.userEmail === u.email);
+                const totalInc = txs.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
+                const totalExp = txs.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+                const balance = totalInc - totalExp;
+                const avgExp = txs.filter(t => t.type === 'expense').length > 0 ? totalExp / txs.filter(t=>t.type==='expense').length : 0;
+                const runway = avgExp > 0 ? Math.floor(balance / avgExp) : Infinity;
+                const recent = txs.slice(0,5);
+                const quizDone = state.quizScores.filter(s => s.userEmail === u.email);
+                const totalQ = quizDone.reduce((acc, q) => acc + q.total, 0);
+                const correctQ = quizDone.reduce((acc, q) => acc + q.correct, 0);
+                const pct = totalQ > 0 ? Math.round((correctQ/totalQ)*100) : 0;
+                const lessons = state.learningProgress[u.email] || 0;
+                const totalLessons = 30;
+
+                return `
+                    <div class="card">
+                        <div class="flex-between">
+                            <div>
+                                <div style="font-weight:600;color:var(--gold);">Accounting Ace</div>
+                                <div style="font-size:1.2rem;font-weight:700;">${getGreeting()}, ${firstname(u.name)}</div>
+                                <div class="text-muted fs-small">${u.university || 'Student'}</div>
+                            </div>
+                            <img src="${u.profilePic || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2248%22 height=%2248%22 viewBox=%220 0 48 48%22%3E%3Ccircle cx=%2224%22 cy=%2224%22 r=%2224%22 fill=%22%23E2E8F0%22/%3E%3Ctext x=%2224%22 y=%2230%22 text-anchor=%22middle%22 font-size=%2220%22 fill=%22%234A5568%22%3E${firstname(u.name)[0]}%3C/text%3E%3C/svg%3E'}" class="avatar" alt="profile">
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="text-muted">Your Balance</div>
+                        <div style="font-size:2.2rem;font-weight:700;">${formatCurrency(balance)}</div>
+                        <div class="flex-between mt-2">
+                            <span><span class="text-success">+${formatCurrency(totalInc)}</span> income</span>
+                            <span><span class="text-danger">-${formatCurrency(totalExp)}</span> expenses</span>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="flex-between"><span class="text-muted">Financial Runway (estimate)</span> <span class="badge">${runway === Infinity ? '∞' : runway + ' days'}</span></div>
+                        ${runway === Infinity ? '<div class="fs-small text-muted">No expenses tracked.</div>' : ''}
+                        ${balance <= 0 ? '<div class="fs-small text-danger">Balance low or negative. Add income.</div>' : ''}
+                    </div>
+                    <div class="card">
+                        <div class="flex-between"><span>Quiz Progress</span> <span>${pct}%</span></div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+                    </div>
+                    <div class="card">
+                        <div class="flex-between"><span>Learning Progress</span> <span>${Math.min(100, Math.round((lessons/totalLessons)*100))}%</span></div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100, Math.round((lessons/totalLessons)*100))}%"></div></div>
+                        <div class="text-muted fs-small">${lessons} / ${totalLessons} lessons</div>
+                    </div>
+                    <div class="search-input"><i class="fas fa-search"></i><input type="text" id="globalSearch" placeholder="Search app, books, notes, transactions..."></div>
+                    <div class="grid-2">
+                        <button class="btn btn-gold btn-sm" data-action="addTransaction"><i class="fas fa-plus"></i> Add</button>
+                        <button class="btn btn-outline btn-sm" data-action="history"><i class="fas fa-list"></i> History</button>
+                        <button class="btn btn-outline btn-sm" data-action="books"><i class="fas fa-book"></i> Books</button>
+                        <button class="btn btn-outline btn-sm" data-action="quiz"><i class="fas fa-question-circle"></i> Quiz</button>
+                    </div>
+                    <div class="card"><h4>Recent Transactions</h4>
+                        ${recent.length === 0 ? '<div class="text-muted">No transactions yet.</div>' : 
+                        recent.map(t => `<div class="transaction-item flex-between"><span><i class="fas ${t.type === 'income' ? 'fa-arrow-up text-success' : 'fa-arrow-down text-danger'}"></i> ${t.category} ${t.description ? '· '+t.description : ''}</span><span class="${t.type === 'income' ? 'text-success' : 'text-danger'}">${t.type === 'income' ? '+' : '-'} ${formatCurrency(t.amount)}</span></div>`).join('')}
+                    </div>
+                `;
+            }
+
+            function renderAcademy() {
+                const u = state.user;
+                const lessons = state.learningProgress[u.email] || 0;
+                const levels = ['Basics', 'Double-Entry', 'Books of Entry', 'Ledger & Trial', 'Financial Statements', 'Practical Accounting'];
+                const levelIdx = Math.min(5, Math.floor(lessons / 5));
+                return `
+                    <div class="card"><h2>📚 Accounting Academy</h2>
+                        <div class="flex-between"><span>Level ${levelIdx+1}: ${levels[levelIdx]}</span> <span class="badge">${Math.min(100, Math.round((lessons/30)*100))}%</span></div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100, Math.round((lessons/30)*100))}%"></div></div>
+                        <div class="text-muted">${lessons} lessons completed</div>
+                        <button class="btn btn-sm btn-gold mt-2" data-action="startLesson">Continue Learning</button>
+                    </div>
+                    <div class="card"><h4>📖 Books & Notes</h4>
+                        <button class="btn btn-sm btn-outline" data-action="books">Open Books</button>
+                        <button class="btn btn-sm btn-outline" data-action="notes">Revision Notes</button>
+                    </div>
+                `;
+            }
+
+            function renderQuizCenter() {
+                const u = state.user;
+                const scores = state.quizScores.filter(s => s.userEmail === u.email);
+                const best = scores.reduce((a,b) => a.percentage > b.percentage ? a : b, {percentage:0});
+                return `
+                    <div class="card"><h2>🧠 Quiz Centre</h2>
+                        <div class="flex-between"><span>Best Score</span> <span class="badge">${best.percentage || 0}%</span></div>
+                        <div class="grid-2 mt-2">
+                            <button class="btn btn-sm btn-gold" data-action="quizBeginner">Beginner</button>
+                            <button class="btn btn-sm btn-outline" data-action="quizIntermediate">Intermediate</button>
+                            <button class="btn btn-sm btn-outline" data-action="quizAdvanced">Advanced</button>
+                        </div>
+                        <div class="text-muted fs-small">${scores.length} quizzes completed</div>
+                    </div>
+                `;
+            }
+
+            function renderCalculators() {
+                const calcs = ['Basic','Profit & Loss','VAT','Markup','Discount','Break-Even','Depreciation','Interest','Cash Flow','Payroll','ROI','Current Ratio','Quick Ratio','Gross Profit Margin','Net Profit Margin','Working Capital','Debt Ratio','ROA','ROE'];
+                return `<div class="card"><h2>🧮 Calculators</h2><div class="grid-2">${calcs.map(c => `<button class="btn btn-sm btn-outline" data-action="calc_${c.replace(/[^a-zA-Z]/g,'')}">${c}</button>`).join('')}</div></div>`;
+            }
+
+            function renderSettings() {
+                const u = state.user;
+                return `
+                    <div class="card"><h2>⚙️ Settings</h2>
+                        <div class="flex-between"><span>Dark Mode</span> <input type="checkbox" id="darkToggle" ${state.settings.darkMode ? 'checked' : ''}></div>
+                        <hr style="margin:12px 0;border-color:var(--light-gray);">
+                        <button class="btn btn-sm btn-outline w-full" data-action="editProfile">Edit Profile</button>
+                        <button class="btn btn-sm btn-outline w-full" data-action="exportData">Export Data</button>
+                        <button class="btn btn-sm btn-outline w-full" data-action="importData">Import Data</button>
+                        <button class="btn btn-sm btn-danger w-full" data-action="logout">Logout</button>
+                        <div class="text-muted fs-small mt-2">Developer: Mohamed Dakiyai · <a href="https://wa.me/23278523079" target="_blank">WhatsApp</a> · <a href="mailto:crapper55538@gmail.com?subject=Accounting%20Ace%20Feedback">Email</a></div>
+                    </div>
+                `;
+            }
+
+            function attachEvents() {
+                const darkToggle = document.getElementById('darkToggle');
+                if (darkToggle) {
+                    darkToggle.onchange = function() {
+                        state.settings.darkMode = this.checked;
+                        saveSettings(); applyTheme();
+                    };
+                }
+                const searchInput = document.getElementById('globalSearch');
+                if (searchInput) {
+                    searchInput.oninput = function() {
+                        const q = this.value.toLowerCase();
+                        if (q.length > 1) showToast('Search: ' + q, 'info');
+                    };
+                }
+                document.querySelectorAll('[data-action]').forEach(el => {
+                    el.onclick = function(e) {
+                        const action = this.dataset.action;
+                        if (action === 'addTransaction') openAddTransaction();
+                        else if (action === 'history') openTransactionHistory();
+                        else if (action === 'books') openBooks();
+                        else if (action === 'notes') openNotes();
+                        else if (action === 'quiz') navigate('quiz');
+                        else if (action === 'startLesson') showToast('Opening lesson...', 'info');
+                        else if (action === 'logout') logout();
+                        else if (action === 'exportData') exportData();
+                        else if (action === 'importData') importData();
+                        else if (action === 'editProfile') openEditProfile();
+                        else if (action.startsWith('quiz')) startQuiz(action.replace('quiz',''));
+                        else if (action.startsWith('calc_')) openCalculator(action.replace('calc_',''));
+                        else showToast('Action: ' + action, 'info');
+                    };
+                });
+            }
+
+            function openModal(html) {
+                const container = document.getElementById('modal-container');
+                container.innerHTML = `<div class="modal-overlay" id="modalOverlay"><div class="modal-box">${html}</div></div>`;
+                document.getElementById('modalOverlay').onclick = function(e) { if (e.target === this) closeModal(); };
+                document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', esc); } });
+            }
+
+            function closeModal() {
+                document.getElementById('modal-container').innerHTML = '';
+            }
+
+            function showToast(msg, type='info') {
+                const old = document.querySelector('.toast-ace');
+                if (old) old.remove();
+                const div = document.createElement('div');
+                div.className = `toast-ace toast-${type}`;
+                div.textContent = msg;
+                document.body.appendChild(div);
+                setTimeout(() => { div.style.opacity = '0'; setTimeout(() => div.remove(), 300); }, 3000);
+            }
+
+            // ---- TRANSACTIONS ----
+            function openAddTransaction() {
+                openModal(`
+                    <h3>Add Transaction</h3>
+                    <div class="form-group"><label>Type</label>
+                        <select id="txType"><option value="income">Income</option><option value="expense">Expense</option></select>
+                    </div>
+                    <div class="form-group"><label>Category</label>
+                        <select id="txCategory"><option>Salary</option><option>Business Sales</option><option>Food</option><option>Transport</option><option>Rent</option><option>Tuition</option><option>Other</option></select>
+                    </div>
+                    <div class="form-group"><label>Amount (Le)</label><input type="number" id="txAmount" placeholder="0"></div>
+                    <div class="form-group"><label>Description</label><input type="text" id="txDesc" placeholder="Optional"></div>
+                    <button class="btn btn-gold w-full" id="saveTx">Save</button>
+                `);
+                document.getElementById('saveTx').onclick = function() {
+                    const type = document.getElementById('txType').value;
+                    const category = document.getElementById('txCategory').value;
+                    const amount = parseFloat(document.getElementById('txAmount').value);
+                    const desc = document.getElementById('txDesc').value;
+                    if (!amount || amount <= 0) { showToast('Enter a valid amount', 'danger'); return; }
+                    state.transactions.push({
+                        id: uid(), userEmail: state.user.email, type, category, amount, description: desc,
+                        date: new Date().toISOString().slice(0,10)
+                    });
+                    saveTransactions();
+                    closeModal();
+                    showToast(`${type} logged ✅`, 'success');
+                    renderPage(state.currentPage);
+                };
+            }
+
+            function openTransactionHistory() {
+                const txs = state.transactions.filter(t => t.userEmail === state.user.email);
+                const totalInc = txs.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);
+                const totalExp = txs.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0);
+                openModal(`
+                    <h3>Transaction History</h3>
+                    <div class="flex-between"><span>Income: ${formatCurrency(totalInc)}</span><span>Expense: ${formatCurrency(totalExp)}</span><span>Balance: ${formatCurrency(totalInc-totalExp)}</span></div>
+                    ${txs.length === 0 ? '<div class="text-muted">No transactions</div>' : txs.slice(0,20).map(t => `
+                        <div class="transaction-item flex-between">
+                            <span><span class="${t.type==='income'?'text-success':'text-danger'}">${t.type==='income'?'+':'-'} ${formatCurrency(t.amount)}</span> ${t.category} ${t.description ? '· '+t.description : ''}</span>
+                            <button class="btn btn-sm btn-danger" data-delid="${t.id}">✕</button>
+                        </div>
+                    `).join('')}
+                    <button class="btn btn-sm btn-outline w-full" onclick="closeModal()">Close</button>
+                `);
+                document.querySelectorAll('[data-delid]').forEach(btn => {
+                    btn.onclick = function() {
+                        if (confirm('Delete transaction?')) {
+                            state.transactions = state.transactions.filter(t => t.id !== this.dataset.delid);
+                            saveTransactions();
+                            showToast('Deleted', 'warning');
+                            openTransactionHistory();
+                        }
+                    };
+                });
+            }
+
+            function openBooks() {
+                openModal(`
+                    <h3>📖 Textbooks</h3>
+                    <div class="book-card"><div class="book-cover">Frank Wood</div><div><strong>Business Accounting</strong><div class="text-muted fs-small">Frank Wood & Alan Sangster</div></div></div>
+                    <div class="book-card"><div class="book-cover">Financial</div><div><strong>Financial Accounting</strong><div class="text-muted fs-small">Comprehensive</div></div></div>
+                    <div class="book-card"><div class="book-cover">Salone</div><div><strong>Accounting in Sierra Leone</strong><div class="text-muted fs-small">Local context</div></div></div>
+                    <button class="btn btn-sm btn-outline w-full" onclick="closeModal()">Close</button>
+                `);
+            }
+
+            function openNotes() {
+                openModal(`
+                    <h3>📝 Revision Notes</h3>
+                    <div class="chip">Accounting Equation</div> <div class="chip">Double Entry</div> <div class="chip">Trial Balance</div>
+                    <div class="text-muted fs-small">Full notes coming soon.</div>
+                    <button class="btn btn-sm btn-outline w-full" onclick="closeModal()">Close</button>
+                `);
+            }
+
+            // ---- QUIZ ----
+            function startQuiz(level) {
+                const questions = generateQuestions(level);
+                let idx = 0; let correct = 0;
+                function renderQuestion() {
+                    if (idx >= questions.length) {
+                        const pct = Math.round((correct/questions.length)*100);
+                        state.quizScores.push({ userEmail: state.user.email, level, correct, total: questions.length, percentage: pct, date: new Date().toISOString() });
+                        saveQuizScores();
+                        showToast(`Score: ${correct}/${questions.length} (${pct}%)`, pct>70?'success':'warning');
+                        closeModal();
+                        return;
+                    }
+                    const q = questions[idx];
+                    openModal(`
+                        <h4>${q.question}</h4>
+                        <div class="grid-2">${q.options.map((opt, i) => `<button class="btn btn-sm btn-outline" data-optindex="${i}">${opt}</button>`).join('')}</div>
+                        <div class="text-muted fs-small">${idx+1}/${questions.length}</div>
+                    `);
+                    document.querySelectorAll('[data-optindex]').forEach(btn => {
+                        btn.onclick = function() {
+                            const chosen = parseInt(this.dataset.optindex);
+                            if (chosen === q.answer) correct++;
+                            idx++;
+                            renderQuestion();
+                        };
+                    });
+                }
+                renderQuestion();
+            }
+
+            function generateQuestions(level) {
+                const pool = [
+                    { q: 'What is the accounting equation?', options: ['Assets = Liabilities + Equity', 'Assets = Equity - Liabilities', 'Liabilities = Assets + Equity', 'Equity = Assets + Liabilities'], answer: 0 },
+                    { q: 'Debit is to...', options: ['Increase asset', 'Increase liability', 'Decrease asset', 'Decrease expense'], answer: 0 },
+                    { q: 'Credit is to...', options: ['Increase expense', 'Increase revenue', 'Decrease liability', 'Increase asset'], answer: 1 },
+                    { q: 'A trial balance tests...', options: ['Arithmetic accuracy', 'Moral correctness', 'Ledger completeness', 'Bank reconciliation'], answer: 0 },
+                    { q: 'Depreciation is...', options: ['Allocation of cost', 'Market value loss', 'Cash expense', 'Capital gain'], answer: 0 },
+                    { q: 'Gross profit = ...', options: ['Sales - COGS', 'Sales - Expenses', 'COGS - Sales', 'Revenue - Liabilities'], answer: 0 },
+                    { q: 'Current ratio = ...', options: ['Current Assets / Current Liabilities', 'Current Liabilities / Current Assets', 'Assets / Equity', 'Sales / Assets'], answer: 0 },
+                    { q: 'VAT is a...', options: ['Consumption tax', 'Income tax', 'Property tax', 'Excise duty'], answer: 0 },
+                    { q: 'The primary ledger is the...', options: ['General Ledger', 'Sales Ledger', 'Purchase Ledger', 'Petty Cash'], answer: 0 },
+                    { q: 'Double entry means...', options: ['Two entries', 'Debit and credit', 'Balance sheet', 'Cash book'], answer: 1 },
+                ];
+                let qs = [];
+                for (let i=0; i<15; i++) {
+                    pool.forEach(p => {
+                        qs.push({...p, question: p.question + ' (v' + i + ')' });
+                    });
+                }
+                qs = qs.sort(() => Math.random() - 0.5);
+                if (level === 'Beginner') return qs.slice(0,30);
+                if (level === 'Intermediate') return qs.slice(30,65);
+                return qs.slice(65,100);
+            }
+
+            // ---- CALCULATOR ----
+            function openCalculator(name) {
+                openModal(`
+                    <h3>${name} Calculator</h3>
+                    <div class="form-group"><label>Value 1</label><input type="number" id="calc1" placeholder="0"></div>
+                    <div class="form-group"><label>Value 2</label><input type="number" id="calc2" placeholder="0"></div>
+                    <button class="btn btn-gold w-full" id="calcBtn">Calculate</button>
+                    <div id="calcResult" class="mt-2"></div>
+                `);
+                document.getElementById('calcBtn').onclick = function() {
+                    const v1 = parseFloat(document.getElementById('calc1').value) || 0;
+                    const v2 = parseFloat(document.getElementById('calc2').value) || 0;
+                    let res = v1 + v2;
+                    if (name === 'Profit') res = v1 - v2;
+                    if (name === 'Markup') res = v1 * (1 + v2/100);
+                    document.getElementById('calcResult').innerHTML = `<strong>Result: ${formatCurrency(res)}</strong>`;
+                };
+            }
+
+            // ---- PROFILE with FILE UPLOAD ----
+            function openEditProfile() {
+                const u = state.user;
+                const currentPic = u.profilePic || '';
+                openModal(`
+                    <h3>Edit Profile</h3>
+                    <div class="form-group">
+                        <label>Profile Picture</label>
+                        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+                            <img src="${currentPic || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2280%22 viewBox=%220 0 80 80%22%3E%3Ccircle cx=%2240%22 cy=%2240%22 r=%2240%22 fill=%22%23E2E8F0%22/%3E%3Ctext x=%2240%22 y=%2250%22 text-anchor=%22middle%22 font-size=%2232%22 fill=%22%234A5568%22%3E${firstname(u.name)[0]}%3C/text%3E%3C/svg%3E'}" class="preview-img" id="profilePreview">
+                            <div class="file-input-wrap">
+                                <button class="btn btn-sm btn-outline">Choose Image</button>
+                                <input type="file" id="profileFileInput" accept="image/*">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group"><label>Full Name</label><input type="text" id="editName" value="${u.name || ''}"></div>
+                    <div class="form-group"><label>University</label><input type="text" id="editUni" value="${u.university || ''}"></div>
+                    <button class="btn btn-gold w-full" id="saveProfile">Save</button>
+                `);
+
+                const fileInput = document.getElementById('profileFileInput');
+                const preview = document.getElementById('profilePreview');
+                if (fileInput) {
+                    fileInput.onchange = function(e) {
+                        const file = e.target.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = function(ev) {
+                                preview.src = ev.target.result;
+                                // store temporarily
+                                preview.dataset.tempImage = ev.target.result;
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    };
+                }
+
+                document.getElementById('saveProfile').onclick = function() {
+                    const newName = document.getElementById('editName').value.trim() || u.name;
+                    const newUni = document.getElementById('editUni').value.trim() || u.university;
+                    // use uploaded image if available, else keep existing
+                    let newPic = u.profilePic;
+                    if (preview.dataset.tempImage) {
+                        newPic = preview.dataset.tempImage;
+                    }
+                    u.name = newName;
+                    u.university = newUni;
+                    u.profilePic = newPic;
+                    saveUsers(); saveSession();
+                    showToast('Profile updated', 'success');
+                    closeModal();
+                    renderPage(state.currentPage);
+                };
+            }
+
+            // ---- EXPORT / IMPORT ----
+            function exportData() {
+                const data = {
+                    user: state.user,
+                    transactions: state.transactions,
+                    quizScores: state.quizScores,
+                    bookmarks: state.bookmarks,
+                    settings: state.settings
+                };
+                const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = 'accounting_ace_backup.json'; a.click();
+                showToast('Export successful', 'success');
+            }
+
+            function importData() {
+                const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
+                input.onchange = function(e) {
+                    const file = e.target.files[0]; if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = function(ev) {
+                        try {
+                            const data = JSON.parse(ev.target.result);
+                            if (data.user && data.transactions) {
+                                state.user = data.user;
+                                state.transactions = data.transactions.filter(t => t.userEmail === state.user.email);
+                                state.quizScores = data.quizScores || [];
+                                state.bookmarks = data.bookmarks || [];
+                                if (data.settings) state.settings = data.settings;
+                                persistAll();
+                                showToast('Import successful', 'success');
+                                renderPage(state.currentPage);
+                            } else { showToast('Invalid backup', 'danger'); }
+                        } catch { showToast('Corrupted file', 'danger'); }
+                    };
+                    reader.readAsText(file);
+                };
+                input.click();
+            }
+
+            // ---- LOGOUT ----
+            function logout() {
+                if (confirm('Logout?')) {
+                    state.session = null; state.user = null;
+                    saveSession();
+                    showToast('Logged out', 'info');
+                    renderPage('dashboard');
+                    window._showLogin();
+                }
+            }
+
+            // ---- LOGIN / REGISTER with FILE UPLOAD ----
+            window._showLogin = function() {
+                openModal(`
+                    <h3>Welcome Back</h3>
+                    <div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="student@example.com"></div>
+                    <div class="form-group"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••"></div>
+                    <button class="btn btn-gold w-full" id="loginBtn">Login</button>
+                    <hr style="margin:16px 0;">
+                    <h4>Create Account</h4>
+                    <div class="form-group">
+                        <label>Profile Picture (optional)</label>
+                        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                            <img src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%2230%22 fill=%22%23E2E8F0%22/%3E%3Ctext x=%2230%22 y=%2238%22 text-anchor=%22middle%22 font-size=%2224%22 fill=%22%234A5568%22%3E📷%3C/text%3E%3C/svg%3E" id="registerPreview" class="avatar-lg" style="border-radius:60px;object-fit:cover;">
+                            <div class="file-input-wrap">
+                                <button class="btn btn-sm btn-outline">Choose Photo</button>
+                                <input type="file" id="registerFileInput" accept="image/*">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group"><label>Full Name</label><input type="text" id="regName" placeholder="Ibrahim Kamara"></div>
+                    <div class="form-group"><label>Email</label><input type="email" id="regEmail" placeholder="ibrahim@example.com"></div>
+                    <div class="form-group"><label>University</label><input type="text" id="regUni" placeholder="University of Sierra Leone"></div>
+                    <div class="form-group"><label>Password</label><input type="password" id="regPass" placeholder="••••••••"></div>
+                    <button class="btn btn-outline w-full" id="registerBtn">Register</button>
+                `);
+
+                const regFileInput = document.getElementById('registerFileInput');
+                const regPreview = document.getElementById('registerPreview');
+                let uploadedImage = null;
+                if (regFileInput) {
+                    regFileInput.onchange = function(e) {
+                        const file = e.target.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = function(ev) {
+                                regPreview.src = ev.target.result;
+                                uploadedImage = ev.target.result;
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    };
+                }
+
+                document.getElementById('loginBtn').onclick = function() {
+                    const email = document.getElementById('loginEmail').value.trim();
+                    const pass = document.getElementById('loginPass').value;
+                    const user = state.users.find(u => u.email === email && u.password === pass);
+                    if (user) {
+                        state.user = user; state.session = { email: user.email };
+                        saveSession(); closeModal(); showToast('Welcome back!', 'success');
+                        renderPage('dashboard');
+                    } else { showToast('Invalid credentials', 'danger'); }
+                };
+
+                document.getElementById('registerBtn').onclick = function() {
+                    const name = document.getElementById('regName').value.trim();
+                    const email = document.getElementById('regEmail').value.trim();
+                    const uni = document.getElementById('regUni').value.trim();
+                    const pass = document.getElementById('regPass').value;
+                    if (!name || !email || !pass) { showToast('Fill all required fields', 'danger'); return; }
+                    if (state.users.find(u => u.email === email)) { showToast('Email already exists', 'danger'); return; }
+                    const newUser = { 
+                        name, email, university: uni, password: pass, 
+                        profilePic: uploadedImage || '' 
+                    };
+                    state.users.push(newUser);
+                    state.user = newUser; state.session = { email };
+                    saveUsers(); saveSession(); closeModal();
+                    showToast('Account created! 🎉', 'success');
+                    renderPage('dashboard');
+                };
+            };
+
+            // ---- INIT ----
+            function init() {
+                loadState();
+                const splash = document.getElementById('splash');
+                setTimeout(() => {
+                    splash.classList.add('hide');
+                    document.getElementById('app').classList.remove('hidden');
+                    if (state.user) {
+                        renderPage('dashboard');
+                    } else {
+                        window._showLogin();
+                        renderPage('dashboard');
+                    }
+                }, 1200);
+
+                document.querySelectorAll('.nav-item').forEach(el => {
+                    el.onclick = function() { navigate(this.dataset.page); };
+                });
+            }
+
+            window.closeModal = closeModal;
+            window._showLogin = window._showLogin;
+
+            document.addEventListener('DOMContentLoaded', init);
+        })();
+    </script>
+</body>
+</html>
