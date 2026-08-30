@@ -1,0 +1,8 @@
+accounting-ace/
+├── screenshots/
+│   ├── home.png
+│   ├── dashboard.png
+│   ├── calculator.png
+│   └── ledger.png
+├── README.md
+└── ...
